@@ -3,4 +3,5 @@ uvicorn[standard]
 langchain
 langchain-postgres
 langchain-huggingface
+sentence-transformers
 psycopg[binary]
