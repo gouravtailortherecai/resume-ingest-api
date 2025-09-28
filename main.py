@@ -19,7 +19,8 @@ def embed_text(text: str):
         model="text-embedding-004",
         contents=text
     )
-    return emb.embedding
+    return emb.embedding.values   # instead of emb.embedding
+
 
 # LangChain embedding wrapper
 class GeminiEmbeddings:
