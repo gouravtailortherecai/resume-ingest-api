@@ -1,20 +1,32 @@
-# ingest_api/main.py
 from fastapi import FastAPI, Body
 import os
-from langchain_groq import GroqEmbeddings
+from google import genai
 from langchain_postgres import PGVector
 
 app = FastAPI()
 
-# Environment variables
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+# Env vars
 NEON_POSTGRES_URI = os.getenv("NEON_POSTGRES_URI")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# Groq Embeddings
-embeddings = GroqEmbeddings(
-    model="nomic-embed-text",
-    groq_api_key=GROQ_API_KEY
-)
+# Gemini client
+client = genai.Client(api_key=GEMINI_API_KEY)
+
+def embed_text(text: str):
+    emb = client.models.embed_content(
+        model="text-embedding-004",
+        contents=text
+    )
+    return emb.embedding
+
+# LangChain embedding wrapper
+class GeminiEmbeddings:
+    def embed_documents(self, texts):
+        return [embed_text(t) for t in texts]
+    def embed_query(self, text):
+        return embed_text(text)
+
+embeddings = GeminiEmbeddings()
 
 # Neon vector DB
 vectorstore = PGVector(
@@ -26,9 +38,6 @@ vectorstore = PGVector(
 
 @app.post("/ingest")
 def ingest_resume(resume_text: str = Body(..., embed=True)):
-    """
-    Take resume text, embed with Groq, and store in Neon.
-    """
     try:
         docs = [{"page_content": resume_text, "metadata": {"source": "resume"}}]
         vectorstore.add_documents(docs)
