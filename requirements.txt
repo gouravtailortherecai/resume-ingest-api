@@ -2,6 +2,5 @@ fastapi
 uvicorn[standard]
 langchain
 langchain-postgres
-langchain-huggingface
-sentence-transformers
+langchain-groq
 psycopg[binary]

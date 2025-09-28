@@ -1,16 +1,22 @@
-# main.py (Ingest API)
+# ingest_api/main.py
 from fastapi import FastAPI, Body
-from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_postgres import PGVector
 import os
+from langchain_groq import GroqEmbeddings
+from langchain_postgres import PGVector
 
 app = FastAPI()
 
-# Environment variable
+# Environment variables
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 NEON_POSTGRES_URI = os.getenv("NEON_POSTGRES_URI")
 
-# Embeddings + Vector DB
-embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+# Groq Embeddings
+embeddings = GroqEmbeddings(
+    model="nomic-embed-text",
+    groq_api_key=GROQ_API_KEY
+)
+
+# Neon vector DB
 vectorstore = PGVector(
     embeddings=embeddings,
     connection=NEON_POSTGRES_URI,
@@ -20,6 +26,9 @@ vectorstore = PGVector(
 
 @app.post("/ingest")
 def ingest_resume(resume_text: str = Body(..., embed=True)):
+    """
+    Take resume text, embed with Groq, and store in Neon.
+    """
     try:
         docs = [{"page_content": resume_text, "metadata": {"source": "resume"}}]
         vectorstore.add_documents(docs)
