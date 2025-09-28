@@ -15,14 +15,12 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 def embed_text(text: str):
-    emb = client.models.embed_content(
+    response = client.models.embed_content(
         model="text-embedding-004",
         contents=text
     )
-    return emb.embedding.values   # instead of emb.embedding
+    return response.embeddings[0].values   # ✅ FIXED
 
-
-# LangChain embedding wrapper
 class GeminiEmbeddings:
     def embed_documents(self, texts):
         return [embed_text(t) for t in texts]
@@ -46,8 +44,7 @@ def ingest_resume(resume_text: str = Body(..., embed=True)):
         docs = [
             Document(
                 page_content=resume_text,
-                metadata={"source": "resume"},
-                id=doc_id
+                metadata={"source": "resume", "id": doc_id}
             )
         ]
         vectorstore.add_documents(docs)
