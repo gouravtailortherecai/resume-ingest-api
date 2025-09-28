@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Body
+from langchain.schema import Document
 import os
 from google import genai
 from langchain_postgres import PGVector
@@ -41,11 +42,13 @@ vectorstore = PGVector(
 def ingest_resume(resume_text: str = Body(..., embed=True)):
     try:
         doc_id = str(uuid.uuid4())
-        docs = [{
-            "id": doc_id,
-            "page_content": resume_text,
-            "metadata": {"source": "resume"}
-        }]
+        docs = [
+            Document(
+                page_content=resume_text,
+                metadata={"source": "resume"},
+                id=doc_id
+            )
+        ]
         vectorstore.add_documents(docs)
         return {"status": "success", "message": "Resume stored in Neon"}
     except Exception as e:
